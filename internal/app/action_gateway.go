@@ -714,10 +714,10 @@ func (g *actionGateway) releaseRegistrationProxyRoute(ctx context.Context, verif
 }
 
 func (g *actionGateway) releaseProxyRoute(ctx context.Context, route DynamicProxyRoute) {
-	if g == nil || g.server == nil || g.server.proxyRuntime == nil {
+	if g == nil || g.server == nil {
 		return
 	}
-	_ = g.server.proxyRuntime.ReleaseProxyRoute(ctx, route)
+	g.server.releaseGatewayProxyRoute(ctx, route, "WA_REGISTRATION")
 }
 
 func (g *actionGateway) deleteRegistrationProxyRoute(ctx context.Context, verificationRequestID string) error {

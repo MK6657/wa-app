@@ -133,7 +133,7 @@ func (s *Server) numberProbeProxy(ctx context.Context, payload map[string]any, c
 		return DynamicProxyRoute{}, "", proxy, func() {}, nil
 	}
 	proxy := map[string]any{"success": true, "accepted": true, "proxy_mode": route.ProxyMode, "country_code": route.CountryCode, "account_id": route.AccountID, "route_id": route.RouteID, "proxy_username": route.Username}
-	return route, route.ProxyURL, proxy, func() { _ = s.proxyRuntime.ReleaseProxyRoute(context.Background(), route) }, nil
+	return route, route.ProxyURL, proxy, func() { s.releaseGatewayProxyRoute(context.Background(), route, "WA_NUMBER_PROBE") }, nil
 }
 
 func sharedNumberProbeProxy(payload map[string]any) (string, DynamicProxyRoute, string) {

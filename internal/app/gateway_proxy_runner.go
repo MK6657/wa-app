@@ -19,11 +19,14 @@ type gatewayProxyEngineRequest struct {
 	Mode          DynamicProxySessionMode
 }
 
-const optionalGatewayProxyFallbackLogInterval = 10 * time.Minute
+const gatewayProxyLogInterval = 10 * time.Minute
 
-var optionalGatewayProxyFallbackLogs = proxyFallbackLogLimiter{last: map[string]time.Time{}}
+var (
+	optionalGatewayProxyFallbackLogs = proxyLogLimiter{last: map[string]time.Time{}}
+	gatewayProxyReleaseFailureLogs   = proxyLogLimiter{last: map[string]time.Time{}}
+)
 
-type proxyFallbackLogLimiter struct {
+type proxyLogLimiter struct {
 	mu   sync.Mutex
 	last map[string]time.Time
 }
@@ -47,16 +50,16 @@ func (s *Server) optionalGatewayProxyEngine(ctx context.Context, native *NativeE
 		Mode:          req.Mode,
 	})
 	if err != nil {
-		logOptionalGatewayProxyFallback(req, optionalGatewayProxyFallbackReason(err))
+		logOptionalGatewayProxyFallback(req, proxyRuntimeFailureReason(err))
 		return native, func() {}, false
 	}
 	proxied, err := native.WithProxyURL(route.ProxyURL)
 	if err != nil {
 		logOptionalGatewayProxyFallback(req, "invalid_proxy_route")
-		_ = s.proxyRuntime.ReleaseProxyRoute(context.Background(), route)
+		s.releaseGatewayProxyRoute(context.Background(), route, req.Purpose)
 		return native, func() {}, false
 	}
-	return proxied, func() { _ = s.proxyRuntime.ReleaseProxyRoute(context.Background(), route) }, true
+	return proxied, func() { s.releaseGatewayProxyRoute(context.Background(), route, req.Purpose) }, true
 }
 
 func logOptionalGatewayProxyFallback(req gatewayProxyEngineRequest, reason string) {
@@ -68,18 +71,39 @@ func logOptionalGatewayProxyFallback(req gatewayProxyEngineRequest, reason strin
 	log.Printf("WA optional gateway proxy fallback purpose=%s mode=%s reason=%s", purpose, safeProxyLogToken(string(req.Mode), "default"), reason)
 }
 
-func (l *proxyFallbackLogLimiter) allow(purpose string, reason string, now time.Time) bool {
+func (s *Server) releaseGatewayProxyRoute(ctx context.Context, route DynamicProxyRoute, purpose string) {
+	if s == nil || s.proxyRuntime == nil || strings.TrimSpace(route.RouteID) == "" {
+		return
+	}
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := s.proxyRuntime.ReleaseProxyRoute(ctx, route); err != nil {
+		logGatewayProxyReleaseFailure(purpose, proxyRuntimeFailureReason(err))
+	}
+}
+
+func logGatewayProxyReleaseFailure(purpose string, reason string) {
+	purpose = safeProxyLogToken(purpose, "unknown")
+	reason = safeProxyLogToken(reason, "release_failed")
+	if !gatewayProxyReleaseFailureLogs.allow(purpose, reason, time.Now().UTC()) {
+		return
+	}
+	log.Printf("WA gateway proxy release failed purpose=%s reason=%s", purpose, reason)
+}
+
+func (l *proxyLogLimiter) allow(purpose string, reason string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	key := purpose + ":" + reason
-	if last, ok := l.last[key]; ok && now.Sub(last) < optionalGatewayProxyFallbackLogInterval {
+	if last, ok := l.last[key]; ok && now.Sub(last) < gatewayProxyLogInterval {
 		return false
 	}
 	l.last[key] = now
 	return true
 }
 
-func optionalGatewayProxyFallbackReason(err error) string {
+func proxyRuntimeFailureReason(err error) string {
 	if err == nil {
 		return "unknown"
 	}

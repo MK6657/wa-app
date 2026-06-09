@@ -25,8 +25,5 @@ func (s *Server) LoginStateCheckProxyRoute(ctx context.Context, correlationID st
 }
 
 func (s *Server) ReleaseProxyRoute(ctx context.Context, route DynamicProxyRoute) {
-	if s == nil || s.proxyRuntime == nil {
-		return
-	}
-	_ = s.proxyRuntime.ReleaseProxyRoute(ctx, route)
+	s.releaseGatewayProxyRoute(ctx, route, "WA_PROXY_ROUTE")
 }
