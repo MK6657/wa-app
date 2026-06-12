@@ -64,6 +64,13 @@ function waMetrics(status: WaProbeStatus, showSms: boolean): Array<{ label: stri
       { label: '原因', value: accountReasonLabel(status.failureReason, status.accountRawReason) || '号码被 WA 拒绝或封禁', tone: 'bad' },
     ];
   }
+  if (status.accountFlow === 'rate_limited') {
+    return [
+      { label: '请求', value: '冷却中', tone: 'warn' },
+      { label: '阶段', value: accountFlowLabel(status.accountFlow), tone: 'warn' },
+      { label: '原因', value: accountReasonLabel(status.accountRawReason, status.failureReason, status.accountRawStatus) || '请求过于频繁，请稍后再试', tone: 'warn' },
+    ];
+  }
   if (status.requestFailed) {
     return [
       { label: '请求', value: '失败', tone: 'bad' },
