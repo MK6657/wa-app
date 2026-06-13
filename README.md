@@ -59,6 +59,14 @@ docker build -t wa-app-service:local .
 docker build -f wa-app/Dockerfile -t wa-app-service:local .
 ```
 
+## 逆向工程
+
+WA APK 逆向工程、字段形状对齐记录、patch 模板和本地分析脚本统一维护在私有仓库：
+
+- https://github.com/byte-v-forge/wa-reverse
+
+`wa-app` 只保留运行时代码和服务说明，不提交 APK、反编译产物、抓包、WAMSYS blob 或逆向记录。
+
 ## 友情链接
 
 - [LINUX DO - 新的理想型社区](https://linux.do/)
