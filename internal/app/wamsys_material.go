@@ -26,7 +26,7 @@ type wamsysMaterialProvider interface {
 type localWamsysMaterialProvider struct{}
 
 const (
-	nativeWamsysGPIAByteLength  = 448
+	nativeWamsysGPIAByteLength  = 430
 	nativeWamsysGIByteLength    = 448
 	nativeWamsysSmallByteLength = 32
 	nativeWamsysGAByteLength    = 64
