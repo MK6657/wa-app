@@ -316,6 +316,10 @@ func (s *Server) clientProfileAppVersion(ctx context.Context, profile *waappv1.C
 	if err != nil {
 		return defaultWAAppVersion
 	}
+	if protocol.GetProtocolProfileId() == "waproto_native" && nativeAppVersion(protocol.GetAppVersion()) != defaultWAAppVersion {
+		protocol.AppVersion = defaultWAAppVersion
+		_ = s.store.SaveProtocolProfile(ctx, protocol)
+	}
 	return protocolAppVersion(protocol)
 }
 
@@ -326,6 +330,10 @@ func (s *Server) protocolIDAppVersion(ctx context.Context, protocolProfileID str
 	protocol, err := s.store.GetProtocolProfile(ctx, protocolProfileID)
 	if err != nil {
 		return defaultWAAppVersion
+	}
+	if protocol.GetProtocolProfileId() == "waproto_native" && nativeAppVersion(protocol.GetAppVersion()) != defaultWAAppVersion {
+		protocol.AppVersion = defaultWAAppVersion
+		_ = s.store.SaveProtocolProfile(ctx, protocol)
 	}
 	return protocolAppVersion(protocol)
 }

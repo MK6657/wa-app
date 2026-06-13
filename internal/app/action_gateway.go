@@ -529,7 +529,7 @@ type nativeStateSaver interface {
 func (s *Server) ensureDefaultProtocolProfile(ctx context.Context) (*waappv1.ProtocolProfile, error) {
 	protocolID := "waproto_native"
 	if profile, err := s.store.GetProtocolProfile(ctx, protocolID); err == nil {
-		if strings.TrimSpace(profile.GetAppVersion()) == "" {
+		if nativeAppVersion(profile.GetAppVersion()) != defaultWAAppVersion {
 			profile.AppVersion = defaultWAAppVersion
 			_ = s.store.SaveProtocolProfile(ctx, profile)
 		}
